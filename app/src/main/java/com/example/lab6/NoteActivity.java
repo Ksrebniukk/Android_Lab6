@@ -1,5 +1,8 @@
 package com.example.lab6;
 
+import android.appwidget.AppWidgetManager;
+import android.content.ComponentName;
+import android.content.Intent;
 import android.os.Bundle;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -76,6 +79,8 @@ public class NoteActivity extends AppCompatActivity {
             Toast.makeText(this, "Нотатку оновлено", Toast.LENGTH_SHORT).show();
         }
 
+        updateWidgets();
+
         setResult(RESULT_OK);
         finish();
     }
@@ -88,12 +93,27 @@ public class NoteActivity extends AppCompatActivity {
                     .setPositiveButton("Видалити", (dialog, which) -> {
                         notesManager.deleteNote(noteId);
                         Toast.makeText(NoteActivity.this, "Нотатку видалено", Toast.LENGTH_SHORT).show();
+
+                        updateWidgets();
+
                         setResult(RESULT_OK);
                         finish();
                     })
                     .setNegativeButton("Скасувати", null)
                     .show();
         }
+    }
+
+    private void updateWidgets() {
+        AppWidgetManager appWidgetManager = AppWidgetManager.getInstance(this);
+        int[] appWidgetIds = appWidgetManager.getAppWidgetIds(
+                new ComponentName(this, NotesWidget.class));
+
+        Intent updateIntent = new Intent(AppWidgetManager.ACTION_APPWIDGET_UPDATE);
+        updateIntent.putExtra(AppWidgetManager.EXTRA_APPWIDGET_IDS, appWidgetIds);
+        sendBroadcast(updateIntent);
+
+        appWidgetManager.notifyAppWidgetViewDataChanged(appWidgetIds, R.id.widget_listview);
     }
 
     @Override
@@ -132,7 +152,9 @@ public class NoteActivity extends AppCompatActivity {
                     .setTitle("Зберегти зміни?")
                     .setMessage("Хочете зберегти зміни перед виходом?")
                     .setPositiveButton("Зберегти", (dialog, which) -> saveNote())
-                    .setNegativeButton("Відхилити", (dialog, which) -> super.onBackPressed())
+                    .setNegativeButton("Відхилити", (dialog, which) -> {
+                        super.onBackPressed();
+                    })
                     .setCancelable(true)
                     .show();
         } else {

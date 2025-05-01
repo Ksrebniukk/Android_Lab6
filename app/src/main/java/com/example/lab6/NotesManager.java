@@ -1,7 +1,10 @@
 package com.example.lab6;
 
 import android.content.Context;
+import android.content.Intent;
 import android.content.SharedPreferences;
+import android.appwidget.AppWidgetManager;
+import android.content.ComponentName;
 
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
@@ -17,8 +20,10 @@ public class NotesManager {
 
     private SharedPreferences sharedPreferences;
     private Gson gson;
+    private Context context;
 
     public NotesManager(Context context) {
+        this.context = context;
         sharedPreferences = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
         gson = new Gson();
     }
@@ -74,5 +79,20 @@ public class NotesManager {
     private void saveNotesList(List<Note> notes) {
         String notesJson = gson.toJson(notes);
         sharedPreferences.edit().putString(NOTES_KEY, notesJson).apply();
+        notifyWidgetDataChanged();
+    }
+
+    public void notifyWidgetDataChanged() {
+        if (context != null) {
+            AppWidgetManager appWidgetManager = AppWidgetManager.getInstance(context);
+            int[] appWidgetIds = appWidgetManager.getAppWidgetIds(
+                    new ComponentName(context, NotesWidget.class));
+
+            Intent updateIntent = new Intent(AppWidgetManager.ACTION_APPWIDGET_UPDATE);
+            updateIntent.putExtra(AppWidgetManager.EXTRA_APPWIDGET_IDS, appWidgetIds);
+            context.sendBroadcast(updateIntent);
+
+            appWidgetManager.notifyAppWidgetViewDataChanged(appWidgetIds, R.id.widget_listview);
+        }
     }
 }
